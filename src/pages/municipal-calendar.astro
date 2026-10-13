@@ -1,0 +1,113 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { records, pageByPath, formatDate, weekday } from '../lib/data';
+
+const page = pageByPath.get('/municipal-calendar')!;
+const entries = records
+  .filter((r) => r.kind === 'event')
+  .flatMap((r) => r.dates.map((d) => ({ r, d })))
+  .sort((a, b) => a.d.localeCompare(b.d) || a.r.title.localeCompare(b.r.title, 'en', { numeric: true }));
+const undated = records.filter((r) => r.kind === 'event' && !r.dates.length);
+
+const months = new Map<string, typeof entries>();
+for (const e of entries) {
+  const k = e.d.slice(0, 7);
+  if (!months.has(k)) months.set(k, []);
+  months.get(k)!.push(e);
+}
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const monthLabel = (k: string) => `${MONTHS[Number(k.slice(5, 7)) - 1]} ${k.slice(0, 4)}`;
+---
+<Base title="Municipal Calendar" description="Upcoming meetings, hearings, closures, and community events in New Gloucester, Maine.">
+  <PageHero title="Municipal Calendar" crumbs={[{ title: 'Home', href: '/' }, { title: 'Government', href: '/government' }]} />
+
+  <div class="wrap cal-layout">
+    <div>
+      <div class="cal-tools">
+        <label class="past-toggle"><input type="checkbox" data-show-past /> Show past events</label>
+        <span class="cal-note">Times are listed at the start of each entry.</span>
+      </div>
+      {[...months].map(([k, list]) => (
+        <section class="month" data-month={k}>
+          <h2>{monthLabel(k)}</h2>
+          <ol class="days">
+            {list.map(({ r, d }) => (
+              <li data-date={d}>
+                <time datetime={d} class="day"><span>{weekday(d).slice(0, 3)}</span><strong>{Number(d.slice(8))}</strong></time>
+                <div>
+                  {r.path ? <a href={r.path} class="ev-title">{r.title}</a> : <span class="ev-title">{r.title}</span>}
+                  {r.dateText && <span class="ev-extra">{r.dateText}</span>}
+                  {!r.path && r.attachments.length > 0 && <a class="ev-extra" href={r.attachments[0].url}>Attachment</a>}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+      <p class="none-upcoming" hidden data-none>No upcoming events are posted yet. Check "Show past events" to see earlier entries.</p>
+      {undated.length > 0 && (
+        <section class="month">
+          <h2>Other notices</h2>
+          <ul class="undated">
+            {undated.map((r) => <li>{r.path ? <a href={r.path}>{r.title}</a> : r.title}</li>)}
+          </ul>
+        </section>
+      )}
+    </div>
+    <aside class="legend card">
+      {page.sidebarHtml ? <div class="prose" set:html={page.sidebarHtml} /> : null}
+      <p class="legend-more">Looking for meeting documents? Go to <a href="/meetings">Meetings &amp; Documents</a>. To watch, see the <a href="/meeting-stream">Meeting Stream &amp; Channel</a>.</p>
+    </aside>
+  </div>
+</Base>
+
+<script>
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const box = document.querySelector<HTMLInputElement>('[data-show-past]')!;
+  const none = document.querySelector<HTMLElement>('[data-none]')!;
+  function apply() {
+    let upcoming = 0;
+    document.querySelectorAll<HTMLElement>('[data-month]').forEach((sec) => {
+      let visible = 0;
+      sec.querySelectorAll<HTMLLIElement>('li[data-date]').forEach((li) => {
+        const past = li.dataset.date! < today;
+        li.hidden = past && !box.checked;
+        li.classList.toggle('today', li.dataset.date === today);
+        if (!li.hidden) visible++;
+        if (!past) upcoming++;
+      });
+      sec.hidden = visible === 0;
+    });
+    none.hidden = upcoming > 0 || box.checked;
+  }
+  box.addEventListener('change', apply);
+  apply();
+</script>
+
+<style>
+  .cal-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 2.5rem; padding-block: 2rem; align-items: start; }
+  .cal-tools { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: .5rem; }
+  .past-toggle { font-weight: 600; display: inline-flex; gap: .4rem; align-items: center; cursor: pointer; }
+  .cal-note { color: var(--muted); font-size: .9rem; }
+  .month h2 { position: sticky; top: 78px; background: var(--paper); padding: .6rem 0; margin: 1.5rem 0 .5rem; z-index: 2; border-bottom: 2px solid var(--harvest); }
+  .days { list-style: none; padding: 0; margin: 0; }
+  .days li { display: flex; gap: 1rem; padding: .8rem 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .days li.today .day { background: var(--barn); }
+  .day { display: grid; place-items: center; min-width: 3.4rem; height: 3.6rem; background: var(--pine-800); color: #fff; border-radius: 10px; line-height: 1; }
+  .day span { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--harvest); }
+  .day strong { font-family: var(--font-serif); font-size: 1.4rem; }
+  .ev-title { font-weight: 600; display: block; color: var(--ink); }
+  a.ev-title { color: var(--pine-700); }
+  .ev-extra { display: block; color: var(--muted); font-size: .9rem; }
+  .undated { padding-left: 1.2rem; }
+  .legend { padding: 1.25rem 1.4rem; position: sticky; top: 100px; }
+  .legend :global(h2) { font-size: 1.1rem; margin: 0 0 .6rem; }
+  .legend :global(p) { margin: 0; }
+  .legend :global(p + p) { margin-top: 0; }
+  .legend-more { margin-top: 1rem !important; padding-top: 1rem; border-top: 1px solid var(--line); font-size: .95rem; }
+  @media (max-width: 900px) {
+    .cal-layout { grid-template-columns: 1fr; }
+    .legend { position: static; order: -1; }
+  }
+</style>

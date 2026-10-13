@@ -1,0 +1,48 @@
+{
+  "name": "Town of New Gloucester",
+  "state": "Maine",
+  "address": { "street": "385 Intervale Rd.", "city": "New Gloucester", "state": "ME", "zip": "04260" },
+  "phone": "(207) 926-4126",
+  "fax": "(207) 926-4136",
+  "facebook": "https://www.facebook.com/profile.php?id=100067006460641",
+  "charterPdf": "https://www.newgloucester.com/vertical/Sites/%7BE9FFB5A1-D5A9-41DE-A9D8-FCFBE460957E%7D/uploads/New_Gloucester_Charter_adopted_11082022.pdf",
+  "hours": [
+    {
+      "id": "town-hall",
+      "name": "Town Hall",
+      "href": "/hours",
+      "lines": [
+        "Monday: 10:00am-7:00pm",
+        "Tuesday and Wednesday: 8:00am-5:00pm",
+        "Thursday: 7:00am-4:00pm",
+        "Friday: Closed"
+      ],
+      "schedule": { "1": [[600, 1140]], "2": [[480, 1020]], "3": [[480, 1020]], "4": [[420, 960]] }
+    },
+    {
+      "id": "library",
+      "name": "Library",
+      "href": "/library",
+      "lines": [
+        "Sunday: 11-3pm",
+        "Monday: 11-7pm",
+        "Tuesday: 11-7pm",
+        "Wednesday: 11-5pm",
+        "Thursday: 9-4pm",
+        "Closed Friday and Saturday"
+      ],
+      "schedule": { "0": [[660, 900]], "1": [[660, 1140]], "2": [[660, 1140]], "3": [[660, 1020]], "4": [[540, 960]] }
+    },
+    {
+      "id": "transfer-station",
+      "name": "Transfer Station",
+      "href": "/transfer-station",
+      "lines": [
+        "Tuesday, Thursday: 9:00am-7:00pm",
+        "Friday: 9:00am-2:00pm",
+        "Saturday: 9:00am-5:00pm"
+      ],
+      "schedule": { "2": [[540, 1140]], "4": [[540, 1140]], "5": [[540, 840]], "6": [[540, 1020]] }
+    }
+  ]
+}

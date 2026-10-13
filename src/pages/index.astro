@@ -1,0 +1,299 @@
+---
+import Base from '../layouts/Base.astro';
+import OpenStatus from '../components/OpenStatus.astro';
+import site from '../data/site.json';
+import { pageByPath, recordById, recordHref, records, formatDate, weekday, type RecordItem } from '../lib/data';
+
+const slides = [
+  { src: '/media/home/lakeview_Web.jpg', alt: 'Lake view with fall trees' },
+  { src: '/media/home/hiker-boys_Web.jpg', alt: 'Boys hiking through trees' },
+  { src: '/media/home/dairy-cows_Web.jpg', alt: 'Dairy cows in pasture' },
+  { src: '/media/home/library-slider_Web.jpg', alt: 'Library in winter' },
+  { src: '/media/home/sunset-winter_Web.jpg', alt: 'Sunset during winter' },
+];
+
+const icons: Record<string, string> = {
+  charter: '<path d="M7 3h8l4 4v14H7z" /><path d="M15 3v4h4M10 12h6M10 16h6" />',
+  policies: '<path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z" /><path d="M9 12l2 2 4-4" />',
+  ordinances: '<path d="M12 4v16M5 8h14M7 8l-3 6a3 3 0 006 0zM17 8l-3 6a3 3 0 006 0zM8 20h8" />',
+  pay: '<rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 10h18M7 15h3" />',
+  elections: '<path d="M4 12l5 5L20 6" /><rect x="3" y="3" width="18" height="18" rx="3" />',
+  bids: '<path d="M4 20h10M6 16l8-8M10 4l6 6M13 3l-3 3 6 6 3-3z" />',
+  car: '<path d="M5 16l1.5-5a2 2 0 012-1.5h7a2 2 0 012 1.5L19 16" /><rect x="3" y="16" width="18" height="4" rx="1" /><circle cx="7" cy="20" r="1.5" /><circle cx="17" cy="20" r="1.5" />',
+  briefcase: '<rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2M3 13h18" />',
+};
+
+const services = [
+  { label: 'Town Charter', href: site.charterPdf, icon: 'charter', note: 'Read the charter (PDF)' },
+  { label: 'Pay Online', href: '/pay-taxes', icon: 'pay', note: 'Real estate & personal property taxes' },
+  { label: 'Licensing & Registrations', href: '/online-services/licensing-and-registrations', icon: 'car', note: 'Vehicles, boats, ATVs, dogs, hunting & fishing' },
+  { label: 'Elections', href: '/elections', icon: 'elections', note: 'Polling place & absentee ballots' },
+  { label: 'Ordinances', href: '/ordinances', icon: 'ordinances', note: 'Town ordinances' },
+  { label: 'Policies', href: '/policies', icon: 'policies', note: 'Town policies' },
+  { label: "Bid Notices & RFP's", href: '/rfp', icon: 'bids', note: 'Bid notices & requests for proposals' },
+  { label: 'Employment', href: '/employment', icon: 'briefcase', note: 'Job openings & application' },
+];
+
+const tiles = [
+  { label: 'Calendar', href: '/municipal-calendar', img: '/media/home/calendar_Web.jpg', alt: 'Person holding a calendar and pencil' },
+  { label: 'News & Announcements', href: '/news', img: '/media/home/news-events_Web.jpg', alt: 'Newspaper on a keyboard' },
+  { label: 'Agendas & Minutes', href: '/meetings', img: '/media/home/agenda-minutes_Web.jpg', alt: 'Planner and pen on a desk' },
+  { label: 'Meeting Live Stream & Channel', href: '/meeting-stream', img: '/media/home/employment_Web.jpg', alt: 'Hand on a keyboard' },
+];
+
+const explore = [
+  { label: 'Public Library', href: '/library', img: '/media/home/library_Web.jpg', alt: 'The library in summer' },
+  { label: 'Pineland Farms', href: 'http://www.pinelandfarms.org/', img: '/media/home/pinelandfarms_Web.jpg', alt: 'White barn and fence' },
+  { label: 'Shaker Village', href: 'http://www.maineshakers.com/about/', img: '/media/home/shaker-house_Web.jpg', alt: 'White Shaker house' },
+  { label: 'Thompson Orchard', href: 'http://maineappleorchard.com', img: '/media/home/orchard_Web.jpg', alt: 'Shop entrance surrounded by flowers' },
+];
+
+const newsPage = pageByPath.get('/news');
+const news = (newsPage?.records ?? []).map((id) => recordById.get(id)).filter(Boolean).slice(0, 6) as RecordItem[];
+
+// Every dated calendar entry from the last week on; the browser hides past ones.
+const buildDay = new Date().toISOString().slice(0, 10);
+const cutoff = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+const upcoming = records
+  .filter((r) => r.kind === 'event')
+  .flatMap((r) => r.dates.map((d) => ({ r, d })))
+  .filter(({ d }) => d >= cutoff)
+  .sort((a, b) => a.d.localeCompare(b.d))
+  .slice(0, 60);
+---
+<Base>
+  <section class="hero" aria-label="Welcome">
+    <div class="slides" data-slides>
+      {slides.map((s, i) => <img src={s.src} alt={s.alt} class:list={['slide', { active: i === 0 }]} fetchpriority={i === 0 ? 'high' : 'low'} loading={i === 0 ? 'eager' : 'lazy'} />)}
+    </div>
+    <div class="hero-shade"></div>
+    <div class="wrap hero-content">
+      <p class="hero-kicker">Town of New Gloucester · Maine</p>
+      <h1>Welcome home to New Gloucester</h1>
+      <form class="hero-search" action="/search" role="search">
+        <label for="hero-q" class="visually-hidden">What are you looking for?</label>
+        <input id="hero-q" name="q" type="search" placeholder="I'm looking for…" autocomplete="off" />
+        <button class="btn btn-primary" type="submit">Search</button>
+      </form>
+      <div class="hero-chips">
+        <span>Popular:</span>
+        <a class="chip" href="/transfer-station">Transfer Station</a>
+        <a class="chip" href="/clerk">Town Clerk</a>
+        <a class="chip" href="/assessing/tax-maps">Tax Maps</a>
+        <a class="chip" href="/meetings">Agendas &amp; Minutes</a>
+        <a class="chip" href="/meeting-stream">Watch Meetings</a>
+      </div>
+    </div>
+    <button class="slide-toggle" type="button" aria-pressed="false" data-slide-toggle>Pause slideshow</button>
+  </section>
+
+  <section class="wrap services" aria-labelledby="services-h">
+    <h2 id="services-h" class="visually-hidden">Popular services</h2>
+    <ul class="service-grid">
+      {services.map((s) => (
+        <li>
+          <a href={s.href} class="service">
+            <svg viewBox="0 0 24 24" aria-hidden="true" set:html={icons[s.icon]} />
+            <span class="service-label">{s.label}</span>
+            <span class="service-note">{s.note}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="wrap two-col">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>News &amp; Announcements</h2>
+        <a href="/news">All news &rarr;</a>
+      </div>
+      <ul class="news-list">
+        {news.map((n) => (
+          <li><a href={recordHref(n)}>{n.title}</a></li>
+        ))}
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Upcoming Meetings &amp; Events</h2>
+        <a href="/municipal-calendar">Full calendar &rarr;</a>
+      </div>
+      <ol class="events" data-upcoming data-build-day={buildDay}>
+        {upcoming.map(({ r, d }) => {
+          const [, m, day] = d.split('-');
+          return (
+            <li data-date={d}>
+              <span class="ev-date" aria-hidden="true"><span>{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(m) - 1]}</span><strong>{Number(day)}</strong></span>
+              <span class="ev-body">
+                {r.path ? <a href={r.path}>{r.title}</a> : <span>{r.title}</span>}
+                <span class="ev-when">{weekday(d)}, {formatDate(d)}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  </section>
+
+  <section class="wrap tiles-wrap" aria-labelledby="informed-h">
+    <p class="eyebrow">Stay informed</p>
+    <h2 id="informed-h">Your local government, in the open</h2>
+    <ul class="tiles">
+      {tiles.map((t) => (
+        <li>
+          <a href={t.href} class="tile">
+            <img src={t.img} alt={t.alt} loading="lazy" width="825" height="375" />
+            <span>{t.label}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="hours-band" aria-labelledby="hours-h">
+    <div class="wrap">
+      <h2 id="hours-h">Hours</h2>
+      <div class="hours-grid">
+        {site.hours.map((h) => (
+          <div class="hours-card">
+            <div class="hours-top"><h3><a href={h.href}>{h.name}</a></h3><OpenStatus schedule={h.schedule} /></div>
+            <ul>{h.lines.map((l) => <li>{l}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+      <p class="hours-note">Holiday closures are posted on the <a href="/our-town/town-holiday-schedule">Town Holiday Schedule</a> and the <a href="/municipal-calendar">Municipal Calendar</a>.</p>
+    </div>
+  </section>
+
+  <section class="wrap explore" aria-labelledby="explore-h">
+    <p class="eyebrow">Explore New Gloucester</p>
+    <h2 id="explore-h">Places worth the drive</h2>
+    <ul class="explore-grid">
+      {explore.map((e) => (
+        <li>
+          <a href={e.href} class="explore-card" rel={e.href.startsWith('http') ? 'noopener' : undefined}>
+            <img src={e.img} alt={e.alt} loading="lazy" width="800" height="1000" />
+            <span>{e.label}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <p class="explore-more"><a href="/places-visit">More places to visit &rarr;</a></p>
+  </section>
+</Base>
+
+<script>
+  // Hero slideshow: gentle crossfade, pausable, off when the user prefers reduced motion.
+  const slides = Array.from(document.querySelectorAll<HTMLImageElement>('[data-slides] .slide'));
+  const toggle = document.querySelector<HTMLButtonElement>('[data-slide-toggle]');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let i = 0;
+  let timer: number | undefined;
+  const next = () => {
+    slides[i].classList.remove('active');
+    i = (i + 1) % slides.length;
+    slides[i].classList.add('active');
+  };
+  const play = () => { timer = window.setInterval(next, 6000); };
+  if (!reduce && slides.length > 1) play();
+  else if (toggle) toggle.hidden = true;
+  toggle?.addEventListener('click', () => {
+    const paused = toggle.getAttribute('aria-pressed') === 'true';
+    if (paused) { play(); toggle.textContent = 'Pause slideshow'; }
+    else { clearInterval(timer); toggle.textContent = 'Play slideshow'; }
+    toggle.setAttribute('aria-pressed', String(!paused));
+  });
+
+  // Upcoming events: hide anything before today (Maine time), show the next six.
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const list = document.querySelector<HTMLElement>('[data-upcoming]');
+  if (list) {
+    let shown = 0;
+    list.querySelectorAll<HTMLLIElement>('li[data-date]').forEach((li) => {
+      const show = li.dataset.date! >= today && shown < 6;
+      li.hidden = !show;
+      if (show) shown++;
+    });
+    if (!shown) list.insertAdjacentHTML('beforeend', '<li><span class="ev-body">No upcoming events are posted. See the full calendar.</span></li>');
+  }
+</script>
+
+<style>
+  .hero { position: relative; min-height: clamp(460px, 62vh, 640px); display: grid; align-items: end; color: #fff; overflow: hidden; }
+  .slides { position: absolute; inset: 0; }
+  .slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.4s ease; }
+  .slide.active { opacity: 1; }
+  .hero-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(20 42 30 / .15) 0%, rgb(20 42 30 / .35) 45%, rgb(20 42 30 / .88) 100%); }
+  .hero-content { position: relative; padding-block: 3rem 3.5rem; width: 100%; }
+  .hero-kicker { text-shadow: 0 1px 8px rgb(0 0 0 / .6); text-transform: uppercase; letter-spacing: .2em; font-weight: 700; font-size: .82rem; color: var(--harvest); margin: 0 0 .5rem; }
+  .hero h1 { color: #fff; font-size: clamp(2.3rem, 5.5vw, 4rem); max-width: 16ch; margin: 0 0 1.25rem; text-shadow: 0 2px 20px rgb(0 0 0 / .3); }
+  .hero-search { display: flex; gap: .5rem; max-width: 620px; background: #fff; padding: .4rem; border-radius: 999px; box-shadow: var(--shadow-lg); }
+  .hero-search input { flex: 1; border: 0; font: inherit; font-size: 1.1rem; padding: .6rem 1rem; border-radius: 999px; min-width: 0; color: var(--ink); }
+  .hero-search input:focus { outline: none; }
+  .hero-search:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .hero-chips { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: 1rem; font-size: .92rem; }
+  .slide-toggle { position: absolute; right: 1rem; top: 1rem; background: rgb(0 0 0 / .45); color: #fff; border: 1px solid rgb(255 255 255 / .4); border-radius: 999px; padding: .35rem .8rem; font: inherit; font-size: .8rem; cursor: pointer; }
+
+  .services { margin-top: -2.2rem; position: relative; z-index: 2; }
+  .service-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: .9rem; }
+  .service { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: .9rem; align-items: center; padding: 1.1rem 1.2rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); text-decoration: none; color: var(--ink); height: 100%; transition: transform .15s, box-shadow .15s, border-color .15s; }
+  .service:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--pine-600); color: var(--ink); }
+  .service svg { grid-row: span 2; width: 42px; height: 42px; padding: 9px; border-radius: 12px; background: var(--pine-100); stroke: var(--pine-700); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .service-label { font-weight: 700; line-height: 1.25; }
+  .service-note { font-size: .85rem; color: var(--muted); line-height: 1.3; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 3.5rem; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem 1.6rem; box-shadow: var(--shadow); }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; border-bottom: 2px solid var(--harvest); padding-bottom: .6rem; margin-bottom: .4rem; }
+  .panel-head h2 { margin: 0; font-size: 1.45rem; }
+  .panel-head a { font-weight: 650; white-space: nowrap; font-size: .95rem; }
+  .news-list { list-style: none; padding: 0; margin: 0; }
+  .news-list li { border-bottom: 1px solid var(--line); }
+  .news-list a { display: block; padding: .8rem 0; font-weight: 600; text-decoration: none; color: var(--ink); }
+  .news-list a:hover { color: var(--barn); text-decoration: underline; }
+  .events { list-style: none; padding: 0; margin: 0; }
+  .events li { display: flex; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--line); align-items: center; }
+  .ev-date { display: grid; place-items: center; width: 3.4rem; min-width: 3.4rem; height: 3.6rem; background: var(--pine-800); color: #fff; border-radius: 10px; line-height: 1; }
+  .ev-date span { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--harvest); }
+  .ev-date strong { font-family: var(--font-serif); font-size: 1.4rem; }
+  .ev-body { display: grid; }
+  .ev-body a, .ev-body > span:first-child { font-weight: 600; color: var(--ink); text-decoration: none; line-height: 1.35; }
+  .ev-body a:hover { color: var(--barn); text-decoration: underline; }
+  .ev-when { color: var(--muted); font-size: .88rem; }
+
+  .tiles-wrap, .explore { margin-top: 4rem; }
+  .tiles-wrap h2, .explore h2 { margin-top: 0; }
+  .tiles { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+  .tile { position: relative; display: block; border-radius: var(--radius); overflow: hidden; aspect-ratio: 4 / 3; box-shadow: var(--shadow); }
+  .tile img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+  .tile span { position: absolute; inset: auto 0 0 0; padding: 2.5rem 1rem 1rem; background: linear-gradient(transparent, rgb(20 42 30 / .92)); color: #fff; font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; line-height: 1.2; }
+  .tile:hover img { transform: scale(1.05); }
+
+  .hours-band { background: var(--pine-100); margin-top: 4rem; padding: 3rem 0; }
+  .hours-band h2 { margin-top: 0; }
+  .hours-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .hours-card { background: var(--card); border-radius: var(--radius); padding: 1.25rem 1.4rem; border: 1px solid var(--line); }
+  .hours-top { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; }
+  .hours-top h3 { margin: 0; font-size: 1.2rem; }
+  .hours-top h3 a { color: var(--pine-900); text-decoration: none; }
+  .hours-card ul { list-style: none; padding: 0; margin: .8rem 0 0; }
+  .hours-card li { padding: .25rem 0; border-top: 1px dashed var(--line); }
+  .hours-note { color: var(--muted); margin: 1rem 0 0; }
+
+  .explore-grid { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+  .explore-card { position: relative; display: block; border-radius: var(--radius); overflow: hidden; aspect-ratio: 4 / 5; box-shadow: var(--shadow); }
+  .explore-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+  .explore-card span { position: absolute; left: 1rem; bottom: 1rem; background: #fff; color: var(--pine-900); padding: .4rem .9rem; border-radius: 999px; font-weight: 700; }
+  .explore-card:hover img { transform: scale(1.05); }
+  .explore-more { margin-top: 1rem; font-weight: 650; }
+
+  @media (max-width: 1000px) {
+    .service-grid, .tiles, .explore-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col, .hours-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 520px) {
+    .service-grid { grid-template-columns: 1fr; }
+    .hero-search { flex-direction: column; border-radius: var(--radius); }
+  }
+</style>

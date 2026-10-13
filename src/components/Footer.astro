@@ -1,0 +1,55 @@
+---
+import site from '../data/site.json';
+import OpenStatus from './OpenStatus.astro';
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div class="footer-contact">
+      <p class="footer-name">Town of New Gloucester</p>
+      <address>
+        {site.address.street}<br />
+        {site.address.city}, {site.address.state} {site.address.zip}
+      </address>
+      <p>
+        <a href={`tel:${site.phone.replace(/\D/g, '')}`}>{site.phone}</a> (phone)<br />
+        {site.fax} (fax)
+      </p>
+      <p><a href={site.facebook} rel="noopener">Follow us on Facebook</a></p>
+    </div>
+    {site.hours.map((h) => (
+      <div class="footer-hours">
+        <h2><a href={h.href}>{h.name} Hours</a></h2>
+        <OpenStatus schedule={h.schedule} />
+        <ul>{h.lines.map((l) => <li>{l}</li>)}</ul>
+      </div>
+    ))}
+  </div>
+  <div class="wrap footer-bottom">
+    <nav aria-label="Footer">
+      <a href="/site-map">Site Map</a>
+      <a href="/accessibility">Accessibility Statement</a>
+      <a href="/our-town/town-holiday-schedule">Holiday Schedule</a>
+      <a href="/search">Search</a>
+    </nav>
+    <p>&copy; {year} Town of New Gloucester, Maine</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer { background: var(--pine-900); color: #d7e3db; margin-top: 4rem; font-size: .95rem; }
+  .site-footer a { color: #fff; }
+  .site-footer a:hover { color: var(--harvest); }
+  .footer-grid { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 2rem; padding-block: 3rem 2rem; }
+  .footer-name { font-family: var(--font-serif); font-size: 1.35rem; color: #fff; margin: 0 0 .5rem; }
+  address { font-style: normal; margin-bottom: 1rem; }
+  .footer-hours h2 { font-family: var(--font-sans); font-size: .82rem; text-transform: uppercase; letter-spacing: .12em; margin: 0 0 .5rem; color: var(--harvest); }
+  .footer-hours h2 a { color: var(--harvest); text-decoration: none; }
+  .footer-hours ul { list-style: none; padding: 0; margin: .6rem 0 0; }
+  .footer-hours li { padding: .1rem 0; }
+  .footer-bottom { border-top: 1px solid rgb(255 255 255 / .15); padding-block: 1.25rem 2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .footer-bottom nav { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+  .footer-bottom p { margin: 0; }
+  @media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .footer-grid { grid-template-columns: 1fr; } }
+</style>

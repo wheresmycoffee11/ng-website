@@ -1,0 +1,30 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+---
+<Base title="Search" noindex>
+  <PageHero title="Search" crumbs={[{ title: 'Home', href: '/' }]} />
+  <div class="wrap search-page">
+    <div id="search"></div>
+    <noscript><p>Search needs JavaScript. You can also browse the <a href="/site-map">Site Map</a>.</p></noscript>
+    <p class="hint">Looking for an agenda or minutes? The <a href="/meetings">Meetings &amp; Documents</a> page can filter by board, type, and year.</p>
+  </div>
+  <link slot="head" href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+  <script is:inline src="/pagefind/pagefind-ui.js"></script>
+  <script is:inline>
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!window.PagefindUI) {
+        document.getElementById('search').innerHTML = '<p>Search index not built. Run <code>npm run build</code>.</p>';
+        return;
+      }
+      const ui = new PagefindUI({ element: '#search', showSubResults: true, showImages: false, resetStyles: false });
+      const q = new URLSearchParams(location.search).get('q');
+      if (q) ui.triggerSearch(q);
+    });
+  </script>
+</Base>
+<style is:global>
+  .search-page { padding-block: 2rem; max-width: 900px; }
+  .search-page .hint { color: var(--muted); margin-top: 2rem; }
+  #search { --pagefind-ui-primary: #24503a; --pagefind-ui-text: #1b2420; --pagefind-ui-border: #e2ddd1; --pagefind-ui-border-radius: 14px; --pagefind-ui-font: 'Public Sans Variable', system-ui, sans-serif; }
+</style>

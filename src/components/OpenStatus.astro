@@ -1,0 +1,34 @@
+---
+/** Live open/closed pill, computed in the browser in Maine's time zone. */
+interface Props { schedule: Record<string, number[][]> }
+const { schedule } = Astro.props;
+---
+<span class="status" data-schedule={JSON.stringify(schedule)}>Hours</span>
+
+<script>
+  function nowInMaine() {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: 'numeric', hour12: false,
+    }).formatToParts(new Date());
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+    const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(get('weekday'));
+    return { day, minutes: (Number(get('hour')) % 24) * 60 + Number(get('minute')) };
+  }
+  function fmt(m: number) {
+    const h = Math.floor(m / 60), mm = m % 60;
+    return `${((h + 11) % 12) + 1}${mm ? ':' + String(mm).padStart(2, '0') : ''}${h < 12 ? 'am' : 'pm'}`;
+  }
+  function update() {
+    const { day, minutes } = nowInMaine();
+    document.querySelectorAll<HTMLElement>('.status[data-schedule]').forEach((el) => {
+      const sched: Record<string, number[][]> = JSON.parse(el.dataset.schedule || '{}');
+      const today = sched[String(day)] ?? [];
+      const open = today.find(([a, b]) => minutes >= a && minutes < b);
+      el.classList.toggle('open', !!open);
+      el.classList.toggle('closed', !open);
+      el.textContent = open ? `Open until ${fmt(open[1])}` : 'Closed now';
+    });
+  }
+  update();
+  setInterval(update, 60_000);
+</script>

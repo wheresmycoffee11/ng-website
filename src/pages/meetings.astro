@@ -1,0 +1,165 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { records, recordHref, boardName, formatDate, pageByPath } from '../lib/data';
+
+const docs = records
+  .filter((r) => r.meeting)
+  .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '') || a.title.localeCompare(b.title));
+const boards = [...new Set(docs.map((r) => boardName(r.board)))].sort((a, b) =>
+  a === 'Select Board' ? -1 : b === 'Select Board' ? 1 : a.localeCompare(b));
+const types = ['Agenda', 'Agenda Packet', 'Minutes', 'Notice', 'Document'].filter((t) => docs.some((r) => r.docType === t));
+const years = [...new Set(docs.map((r) => r.date?.slice(0, 4)).filter(Boolean))].sort().reverse() as string[];
+const boardPages = [...new Set(docs.map((r) => r.listedOn).filter(Boolean))] as string[];
+const typeClass = (t: string) => t.toLowerCase().replace(/\s+/g, '-');
+---
+<Base title="Meetings & Documents" description="Every agenda, agenda packet, and set of minutes the Town of New Gloucester has posted, searchable by board, type, and year.">
+  <PageHero title="Meetings & Documents" crumbs={[{ title: 'Home', href: '/' }, { title: 'Government', href: '/government' }]}>
+    <p class="lede">Every agenda, packet, and set of minutes in one place. Pick a board, filter by type or year, and open the file directly.</p>
+  </PageHero>
+
+  <div class="wrap hub">
+    <form class="filters card" data-filters onsubmit="return false">
+      <div class="f-row">
+        <label class="f-search">
+          <span class="visually-hidden">Search titles</span>
+          <input type="search" placeholder="Search titles, e.g. budget, June 2026, hearing" data-q />
+        </label>
+        <label>
+          <span class="visually-hidden">Board or committee</span>
+          <select data-board>
+            <option value="">All boards &amp; committees</option>
+            {boards.map((b) => <option value={b}>{b}</option>)}
+          </select>
+        </label>
+        <label>
+          <span class="visually-hidden">Year</span>
+          <select data-year>
+            <option value="">Any year</option>
+            {years.map((y) => <option value={y}>{y}</option>)}
+            <option value="none">Undated</option>
+          </select>
+        </label>
+      </div>
+      <fieldset class="f-types">
+        <legend class="visually-hidden">Document type</legend>
+        {types.map((t) => (
+          <label class="type-chip"><input type="checkbox" value={t} checked data-type /> <span class:list={['rl-type', typeClass(t)]}>{t}</span></label>
+        ))}
+      </fieldset>
+      <p class="f-count" aria-live="polite" data-count>{docs.length} documents</p>
+    </form>
+
+    <ol class="docs" data-docs>
+      {docs.map((r) => (
+        <li data-board={boardName(r.board)} data-type={r.docType} data-year={r.date?.slice(0, 4) ?? 'none'} data-text={r.title.toLowerCase()}>
+          <a href={recordHref(r)}>
+            <span class:list={['rl-type', typeClass(r.docType)]}>{r.docType}</span>
+            <span class="d-title">{r.title}</span>
+            <span class="d-board">{boardName(r.board)}</span>
+            <span class="d-date">{r.date ? <time datetime={r.date}>{formatDate(r.date, 'short')}</time> : 'Undated'}</span>
+          </a>
+          {r.summary && <div class="d-summary" set:html={r.summary} />}
+        </li>
+      ))}
+    </ol>
+    <button class="btn btn-ghost more" type="button" data-more>Show more</button>
+
+    <section class="by-board">
+      <h2>Browse by board</h2>
+      <p>Each board's page also has its own list, the way the old site organized them.</p>
+      <ul>
+        {boardPages.map((p) => {
+          const pg = pageByPath.get(p);
+          const parent = pg?.parent ? pageByPath.get(pg.parent) : null;
+          const label = pg && /^(agendas?|minutes)$/i.test(pg.title) && parent ? `${parent.title}: ${pg.title}` : pg?.title;
+          return pg ? <li><a href={p}>{label}</a></li> : null;
+        })}
+      </ul>
+      <p>Video of meetings is on the <a href="/meeting-stream">Meeting Stream &amp; Channel</a> page. Dates and places are on the <a href="/municipal-calendar">Municipal Calendar</a>.</p>
+    </section>
+  </div>
+</Base>
+
+<script>
+  const PAGE = 50;
+  const form = document.querySelector<HTMLFormElement>('[data-filters]')!;
+  const q = form.querySelector<HTMLInputElement>('[data-q]')!;
+  const board = form.querySelector<HTMLSelectElement>('[data-board]')!;
+  const year = form.querySelector<HTMLSelectElement>('[data-year]')!;
+  const typeBoxes = Array.from(form.querySelectorAll<HTMLInputElement>('[data-type]'));
+  const count = form.querySelector<HTMLElement>('[data-count]')!;
+  const rows = Array.from(document.querySelectorAll<HTMLLIElement>('[data-docs] > li'));
+  const more = document.querySelector<HTMLButtonElement>('[data-more]')!;
+  let limit = PAGE;
+
+  // Deep links: /meetings?board=Planning%20Board&year=2025&q=hearing
+  const params = new URLSearchParams(location.search);
+  if (params.get('q')) q.value = params.get('q')!;
+  if (params.get('board')) board.value = params.get('board')!;
+  if (params.get('year')) year.value = params.get('year')!;
+
+  function apply() {
+    const terms = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+    const types = new Set(typeBoxes.filter((b) => b.checked).map((b) => b.value));
+    let matched = 0;
+    rows.forEach((li) => {
+      const d = li.dataset;
+      const ok = (!board.value || d.board === board.value) && (!year.value || d.year === year.value) &&
+        types.has(d.type!) && terms.every((t) => d.text!.includes(t));
+      li.hidden = !ok || matched >= limit;
+      if (ok) matched++;
+    });
+    count.textContent = `${matched} document${matched === 1 ? '' : 's'}`;
+    more.hidden = matched <= limit;
+    const p = new URLSearchParams();
+    if (q.value) p.set('q', q.value);
+    if (board.value) p.set('board', board.value);
+    if (year.value) p.set('year', year.value);
+    history.replaceState(null, '', p.toString() ? `?${p}` : location.pathname);
+  }
+  const reset = () => { limit = PAGE; apply(); };
+  q.addEventListener('input', reset);
+  board.addEventListener('change', reset);
+  year.addEventListener('change', reset);
+  typeBoxes.forEach((b) => b.addEventListener('change', reset));
+  more.addEventListener('click', () => { limit += PAGE * 2; apply(); });
+  apply();
+</script>
+
+<style>
+  .lede { color: #e2ece5; max-width: 60ch; margin: .6rem 0 0; font-size: 1.1rem; }
+  .hub { padding-block: 2rem; }
+  .filters { padding: 1.1rem 1.25rem; position: sticky; top: 90px; z-index: 5; }
+  .f-row { display: flex; gap: .6rem; flex-wrap: wrap; }
+  .f-search { flex: 1; min-width: 240px; }
+  .filters input[type='search'], .filters select { width: 100%; font: inherit; padding: .6rem .9rem; border: 1px solid var(--line); border-radius: 999px; background: #fff; }
+  .f-types { border: 0; padding: 0; margin: .8rem 0 0; display: flex; gap: .5rem; flex-wrap: wrap; }
+  .type-chip { display: inline-flex; align-items: center; gap: .3rem; cursor: pointer; }
+  .f-count { margin: .6rem 0 0; color: var(--muted); font-size: .9rem; }
+  .docs { list-style: none; padding: 0; margin: 1.25rem 0 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .docs li { border-top: 1px solid var(--line); }
+  .docs li:first-child { border-top: 0; }
+  .docs a { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 15rem 7rem; gap: .8rem; align-items: center; padding: .75rem 1rem; text-decoration: none; color: var(--ink); }
+  .docs a:hover { background: var(--pine-100); color: var(--ink); }
+  .docs a:hover .d-title { text-decoration: underline; }
+  .d-title { font-weight: 600; }
+  .d-board { color: var(--muted); font-size: .9rem; }
+  .d-date { color: var(--muted); font-size: .9rem; text-align: right; white-space: nowrap; }
+  .d-summary { padding: 0 1rem .7rem 9.3rem; color: var(--barn); font-size: .9rem; font-weight: 600; }
+  .rl-type { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: .2rem .5rem; border-radius: 6px; background: #eef0ee; color: #445; justify-self: start; white-space: nowrap; }
+  .rl-type.agenda { background: #e3eefc; color: #1d4f91; }
+  .rl-type.agenda-packet { background: #ece6fb; color: #4b2f91; }
+  .rl-type.minutes { background: #e2f3e6; color: #1f6b38; }
+  .rl-type.notice { background: #fdf0d7; color: #7a4d00; }
+  .more { margin: 1rem auto 0; display: flex; }
+  .by-board { margin-top: 3rem; }
+  .by-board ul { columns: 3 240px; padding-left: 1.1rem; }
+  .by-board li { margin: .25rem 0; break-inside: avoid; }
+  @media (max-width: 860px) {
+    .docs a { grid-template-columns: 1fr; gap: .25rem; }
+    .d-date { text-align: left; }
+    .d-summary { padding-left: 1rem; }
+    .filters { position: static; }
+  }
+</style>

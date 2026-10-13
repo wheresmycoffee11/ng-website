@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+---
+<Base title="Page not found" noindex>
+  <PageHero title="We couldn't find that page" />
+  <div class="wrap nf">
+    <p data-msg>The page may have moved when the town website was rebuilt.</p>
+    <form action="/search" role="search" class="nf-search">
+      <label for="nf-q" class="visually-hidden">Search</label>
+      <input id="nf-q" name="q" type="search" placeholder="Search the site" />
+      <button class="btn btn-primary">Search</button>
+    </form>
+    <p>Or try the <a href="/site-map">Site Map</a>, <a href="/meetings">Meetings &amp; Documents</a>, or call the Town Office at <a href="tel:2079264126">(207) 926-4126</a>.</p>
+  </div>
+</Base>
+<script>
+  // Send visitors with bookmarks to the old site (index.asp?SEC=…, /Accessibility, …) to the new page.
+  (async () => {
+    const key = (location.pathname + location.search).replace(/[{}]|%7B|%7D/gi, '');
+    const params = new URLSearchParams(location.search);
+    const sorted = [...params.entries()]
+      .map(([k, v]) => [k, /^(SEC|DE)$/i.test(k) ? v.replace(/[{}]/g, '').toUpperCase() : v])
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    const normal = location.pathname + (sorted.length ? '?' + new URLSearchParams(sorted).toString() : '');
+    try {
+      const map: Record<string, string> = await (await fetch('/legacy-redirects.json')).json();
+      const target = map[normal] ?? map[key] ?? map[location.pathname.toLowerCase()];
+      if (target) {
+        document.querySelector('[data-msg]')!.textContent = 'This page moved. Taking you there now…';
+        location.replace(target);
+      }
+    } catch { /* no map: leave the help text */ }
+  })();
+</script>
+<style>
+  .nf { padding-block: 2rem; max-width: 720px; }
+  .nf-search { display: flex; gap: .5rem; margin: 1rem 0; }
+  .nf-search input { flex: 1; padding: .7rem 1rem; border: 1px solid var(--line); border-radius: 999px; font: inherit; }
+</style>

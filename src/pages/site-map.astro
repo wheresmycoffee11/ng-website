@@ -1,0 +1,58 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { nav, pages, childrenOf, type NavItem } from '../lib/data';
+
+// Everything in the menu, plus every other page grouped under its parent.
+const inNav = new Set<string>();
+const collect = (items: NavItem[]) => items.forEach((i) => { inNav.add(i.href); collect(i.children); });
+collect(nav);
+const extras = (path: string) => childrenOf(path).filter((p) => !inNav.has(p.path));
+const orphans = pages.filter((p) => !p.parent && !inNav.has(p.path) && !['/', '/site-map'].includes(p.path));
+---
+<Base title="Site Map">
+  <PageHero title="Site Map" crumbs={[{ title: 'Home', href: '/' }]} />
+  <div class="wrap sitemap">
+    <ul class="tree">
+      <li><a href="/">Home</a></li>
+      <li><a href="/meetings">Meetings &amp; Documents</a></li>
+      {nav.filter((n) => n.href !== '/').map((top) => (
+        <li>
+          <a href={top.href}>{top.title}</a>
+          <ul>
+            {top.children.map((c) => (
+              <li>
+                <a href={c.href}>{c.title}</a>
+                {(c.children.length > 0 || extras(c.href).length > 0) && (
+                  <ul>
+                    {c.children.map((g) => (
+                      <li>
+                        <a href={g.href}>{g.title}</a>
+                        {(g.children.length > 0 || extras(g.href).length > 0) && (
+                          <ul>
+                            {g.children.map((x) => <li><a href={x.href}>{x.title}</a></li>)}
+                            {extras(g.href).map((x) => <li><a href={x.path}>{x.title}</a>{extras(x.path).length > 0 && <ul>{extras(x.path).map((y) => <li><a href={y.path}>{y.title}</a></li>)}</ul>}</li>)}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                    {extras(c.href).map((x) => <li><a href={x.path}>{x.title}</a></li>)}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))}
+      {orphans.map((p) => <li><a href={p.path}>{p.title}</a></li>)}
+      <li><a href="/search">Search</a></li>
+    </ul>
+  </div>
+</Base>
+<style>
+  .sitemap { padding-block: 2rem; }
+  .tree { columns: 2 380px; column-gap: 3rem; padding-left: 1.1rem; }
+  .tree > li { break-inside: avoid; margin-bottom: 1rem; font-weight: 700; }
+  .tree ul { font-weight: 400; padding-left: 1.1rem; }
+  .tree li { margin: .2rem 0; }
+</style>

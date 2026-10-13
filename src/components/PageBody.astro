@@ -1,0 +1,7 @@
+---
+import RecordList from './RecordList.astro';
+import { splitHtml } from '../lib/data';
+interface Props { html: string }
+const parts = splitHtml(Astro.props.html);
+---
+{parts.map((part) => ('ids' in part ? <RecordList ids={part.ids} /> : <div class="prose" set:html={part.html} />))}

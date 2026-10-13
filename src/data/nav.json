@@ -1,0 +1,413 @@
+[
+ {
+  "title": "Home",
+  "href": "/",
+  "children": []
+ },
+ {
+  "title": "Our Town",
+  "href": "/our-town",
+  "children": [
+   {
+    "title": "Agency Links",
+    "href": "/agency-links",
+    "children": []
+   },
+   {
+    "title": "Cemetery Association",
+    "href": "/cemetery",
+    "children": []
+   },
+   {
+    "title": "Community Events",
+    "href": "/events",
+    "children": []
+   },
+   {
+    "title": "Employment",
+    "href": "/employment",
+    "children": []
+   },
+   {
+    "title": "Historical Society",
+    "href": "/historical",
+    "children": []
+   },
+   {
+    "title": "News & Announcements",
+    "href": "/news",
+    "children": []
+   },
+   {
+    "title": "Places to Visit",
+    "href": "/places-visit",
+    "children": []
+   },
+   {
+    "title": "Policies",
+    "href": "/policies",
+    "children": []
+   },
+   {
+    "title": "Facility Use Forms",
+    "href": "/facility-forms",
+    "children": []
+   },
+   {
+    "title": "Veterans Monument",
+    "href": "/veterans",
+    "children": []
+   },
+   {
+    "title": "Water District",
+    "href": "/water-district",
+    "children": []
+   },
+   {
+    "title": "Town Holiday Schedule",
+    "href": "/our-town/town-holiday-schedule",
+    "children": []
+   }
+  ]
+ },
+ {
+  "title": "Online Services",
+  "href": "/online-services",
+  "children": [
+   {
+    "title": "Licensing & Registrations",
+    "href": "/online-services/licensing-and-registrations",
+    "children": []
+   },
+   {
+    "title": "Pay Taxes",
+    "href": "/pay-taxes",
+    "children": []
+   }
+  ]
+ },
+ {
+  "title": "Government",
+  "href": "/government",
+  "children": [
+   {
+    "title": "Agenda & Minutes",
+    "href": "/agenda-minutes",
+    "children": [
+     {
+      "title": "Select Board Meetings",
+      "href": "/select-board-meetings",
+      "children": []
+     },
+     {
+      "title": "Adhoc Municipal Complex Advisory Committee",
+      "href": "/agenda-minutes/adhoc-municipal-complex-advisory-committee",
+      "children": []
+     },
+     {
+      "title": "Adhoc Semiquincentennial Committee",
+      "href": "/agenda-minutes/adhoc-semiquincentennial-committee",
+      "children": []
+     },
+     {
+      "title": "Budget Committee",
+      "href": "/agenda-minutes/budget-committee",
+      "children": []
+     },
+     {
+      "title": "CIP Committee",
+      "href": "/agenda-minutes/cip-committee",
+      "children": []
+     },
+     {
+      "title": "Candidates / Referendum Committee",
+      "href": "/agenda-minutes/candidates-referendum-committee",
+      "children": []
+     },
+     {
+      "title": "Community Fair Committee",
+      "href": "/agenda-minutes/community-fair-committee",
+      "children": []
+     },
+     {
+      "title": "Economic and Community Development Committee",
+      "href": "/agenda-minutes/economic-and-community-development-committee",
+      "children": [
+       {
+        "title": "Agendas",
+        "href": "/agenda-minutes/economic-and-community-development-committee/agendas",
+        "children": []
+       },
+       {
+        "title": "Minutes",
+        "href": "/agenda-minutes/economic-and-community-development-committee/minutes",
+        "children": []
+       }
+      ]
+     },
+     {
+      "title": "LMPC",
+      "href": "/agenda-minutes/lmpc",
+      "children": [
+       {
+        "title": "Agendas",
+        "href": "/agenda-minutes/lmpc/agendas",
+        "children": []
+       },
+       {
+        "title": "Minutes",
+        "href": "/agenda-minutes/lmpc/minutes",
+        "children": []
+       }
+      ]
+     },
+     {
+      "title": "Library Board of Trustees",
+      "href": "/agenda-minutes/library-board-of-trustees",
+      "children": []
+     },
+     {
+      "title": "Parks & Rec",
+      "href": "/agenda-minutes/parks-and-rec",
+      "children": []
+     },
+     {
+      "title": "Planning Board",
+      "href": "/agenda-minutes/planning-board",
+      "children": []
+     },
+     {
+      "title": "Town Meeting",
+      "href": "/agenda-minutes/town-meeting",
+      "children": []
+     },
+     {
+      "title": "Water District",
+      "href": "/agenda-minutes/water-district",
+      "children": [
+       {
+        "title": "Agenda",
+        "href": "/agenda-minutes/water-district/agenda",
+        "children": []
+       },
+       {
+        "title": "Minutes",
+        "href": "/agenda-minutes/water-district/minutes",
+        "children": []
+       }
+      ]
+     },
+     {
+      "title": "Zoning Board of Appeals",
+      "href": "/agenda-minutes/zoning-board-of-appeals",
+      "children": []
+     }
+    ]
+   },
+   {
+    "title": "Boards & Committees",
+    "href": "/boards",
+    "children": [
+     {
+      "title": "Adhoc Municipal Complex Advisory Committee",
+      "href": "/boards/adhoc-municipal-complex-advisory-committee",
+      "children": []
+     },
+     {
+      "title": "Adhoc Scenic Assessment Committee",
+      "href": "/boards/adhoc-scenic-assessment-committee",
+      "children": []
+     },
+     {
+      "title": "Board of Appeals",
+      "href": "/boards/board-of-appeals",
+      "children": []
+     },
+     {
+      "title": "CIP Committee",
+      "href": "/boards/cip-committee",
+      "children": []
+     },
+     {
+      "title": "Charter Commission",
+      "href": "/boards/charter-commission",
+      "children": []
+     },
+     {
+      "title": "Community Fair Committee",
+      "href": "/boards/community-fair-committee",
+      "children": []
+     },
+     {
+      "title": "Economic and Community Development Committee",
+      "href": "/boards/economic-and-community-development-committee",
+      "children": []
+     },
+     {
+      "title": "Environmental Resources Committee",
+      "href": "/boards/environmental-resources-committee",
+      "children": []
+     },
+     {
+      "title": "Finance Committee",
+      "href": "/boards/finance-committee",
+      "children": []
+     },
+     {
+      "title": "Land Management Planning Committee",
+      "href": "/boards/land-management-planning-committee",
+      "children": [
+       {
+        "title": "Marijuana Ordinance Planning",
+        "href": "/boards/land-management-planning-committee/marijuana-ordinance-planning",
+        "children": []
+       }
+      ]
+     },
+     {
+      "title": "Library Board of Trustees",
+      "href": "/boards/library-board-of-trustees",
+      "children": []
+     },
+     {
+      "title": "Parks & Recreation Committee",
+      "href": "/boards/parks-and-recreation-committee",
+      "children": []
+     },
+     {
+      "title": "Planning Board",
+      "href": "/boards/planning-board",
+      "children": []
+     },
+     {
+      "title": "SAD #15 School Board",
+      "href": "/boards/sad-15-school-board",
+      "children": []
+     }
+    ]
+   },
+   {
+    "title": "Meeting Stream & Channel",
+    "href": "/meeting-stream",
+    "children": []
+   },
+   {
+    "title": "Municipal Calendar",
+    "href": "/municipal-calendar",
+    "children": []
+   },
+   {
+    "title": "Select Board",
+    "href": "/select-board",
+    "children": []
+   },
+   {
+    "title": "Bid Notices & RFP's",
+    "href": "/rfp",
+    "children": []
+   },
+   {
+    "title": "Elections",
+    "href": "/elections",
+    "children": []
+   },
+   {
+    "title": "Ordinances",
+    "href": "/ordinances",
+    "children": []
+   }
+  ]
+ },
+ {
+  "title": "Departments",
+  "href": "/departments",
+  "children": [
+   {
+    "title": "Town Hall Hours",
+    "href": "/hours",
+    "children": []
+   },
+   {
+    "title": "Town Manager",
+    "href": "/town-manager",
+    "children": []
+   },
+   {
+    "title": "Town Office",
+    "href": "/town-office",
+    "children": []
+   },
+   {
+    "title": "Animal Control",
+    "href": "/animal-control",
+    "children": []
+   },
+   {
+    "title": "Assessing",
+    "href": "/assessing",
+    "children": [
+     {
+      "title": "Tax Committments",
+      "href": "/assessing/tax-committments",
+      "children": []
+     },
+     {
+      "title": "Tax Maps",
+      "href": "/assessing/tax-maps",
+      "children": []
+     },
+     {
+      "title": "Street & Snowmobile Maps",
+      "href": "/assessing/street-and-snowmobile-maps",
+      "children": []
+     }
+    ]
+   },
+   {
+    "title": "Code Enforcement",
+    "href": "/enforcement",
+    "children": []
+   },
+   {
+    "title": "Fire & Rescue",
+    "href": "/fire",
+    "children": []
+   },
+   {
+    "title": "General Assistance",
+    "href": "/assistance",
+    "children": []
+   },
+   {
+    "title": "Library",
+    "href": "/library",
+    "children": []
+   },
+   {
+    "title": "Parks & Recreation",
+    "href": "/park-rec",
+    "children": []
+   },
+   {
+    "title": "Planning",
+    "href": "/planning",
+    "children": []
+   },
+   {
+    "title": "Public Works",
+    "href": "/public-works",
+    "children": []
+   },
+   {
+    "title": "Town Clerk",
+    "href": "/clerk",
+    "children": []
+   },
+   {
+    "title": "Transfer Station",
+    "href": "/transfer-station",
+    "children": []
+   }
+  ]
+ }
+]

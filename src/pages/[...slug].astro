@@ -1,0 +1,127 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import PageBody from '../components/PageBody.astro';
+import {
+  pages, records, pageByPath, breadcrumbs, childrenOf, formatDate, weekday,
+  type Page, type RecordItem,
+} from '../lib/data';
+
+export function getStaticPaths() {
+  // Pages with purpose-built templates elsewhere in src/pages.
+  const CUSTOM = new Set(['/', '/site-map', '/news', '/municipal-calendar']);
+  const pageRoutes = pages
+    .filter((p) => !CUSTOM.has(p.path))
+    .map((p) => ({ params: { slug: p.path.replace(/^\//, '') }, props: { page: p, record: null } }));
+  const recordRoutes = records
+    .filter((r) => r.path)
+    .map((r) => ({ params: { slug: r.path!.replace(/^\//, '') }, props: { page: null, record: r } }));
+  return [...pageRoutes, ...recordRoutes];
+}
+
+const { page, record } = Astro.props as { page: Page | null; record: RecordItem | null };
+
+let title = '';
+let crumbs: { title: string; href: string }[] = [];
+let kids: Page[] = [];
+if (page) {
+  title = page.heading || page.title;
+  crumbs = breadcrumbs(page.path);
+  kids = childrenOf(page.path);
+} else if (record) {
+  title = record.title;
+  const parentPath = record.listedOn ?? record.fallback;
+  const parent = pageByPath.get(parentPath);
+  crumbs = parent ? [...breadcrumbs(parent.path), { title: parent.title, href: parent.path }] : [{ title: 'Home', href: '/' }];
+}
+const isEmpty = page && !page.html.replace(/<[^>]+>/g, '').trim() && !page.html.includes('record-list') && kids.length === 0;
+const kindLabel: Record<string, string> = { news: 'News & Announcements', event: 'Municipal Calendar', job: 'Employment Opportunity', item: '' };
+const fileIcon = (ext: string) => ({ pdf: 'PDF', doc: 'Word', docx: 'Word', xlsx: 'Excel', xls: 'Excel', pptx: 'PowerPoint', kmz: 'Google Earth', jpg: 'Image', png: 'Image' } as Record<string, string>)[ext] ?? ext.toUpperCase();
+---
+<Base title={title} description={page ? `${title}: Town of New Gloucester, Maine.` : `${title}. ${kindLabel[record!.kind] || 'Town of New Gloucester, Maine'}.`}>
+  <PageHero title={title} crumbs={crumbs} eyebrow={record ? kindLabel[record.kind] || record.docType : undefined}>
+    {record?.dates?.length ? (
+      <p class="hero-date">{record.dates.map((d) => `${weekday(d)}, ${formatDate(d)}`).join(' · ')}</p>
+    ) : record?.date ? <p class="hero-date">{formatDate(record.date)}</p> : null}
+  </PageHero>
+
+  <div class="wrap layout">
+    <article class="content">
+      {page && <PageBody html={page.html} />}
+      {isEmpty && (
+        <div class="empty card">
+          <p><strong>Nothing is posted here right now.</strong></p>
+          <p>Check back soon, or call the Town Office at <a href="tel:2079264126">(207) 926-4126</a>.</p>
+        </div>
+      )}
+      {record && (
+        <>
+          {record.dateText && <p class="when"><strong>When:</strong> {record.dateText}</p>}
+          {record.html && <div class="prose" set:html={record.html} />}
+          {record.sidebarHtml && <div class="prose record-side" set:html={record.sidebarHtml} />}
+          {record.contactHtml && <div class="prose contact" set:html={record.contactHtml} />}
+          {record.attachments.length > 0 && (
+            <section class="files">
+              <h2>{record.attachments.length > 1 ? 'Files' : 'File'}</h2>
+              <ul>
+                {record.attachments.map((a) => (
+                  <li>
+                    <a href={a.url} class="file-card">
+                      <span class="file-type">{fileIcon(a.ext)}</span>
+                      <span class="file-name">{a.label || a.name}</span>
+                      <span class="file-dl" aria-hidden="true">Open &rarr;</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
+      )}
+    </article>
+
+    {(page?.sidebarHtml || kids.length > 0) && (
+      <aside class="sidebar">
+        {kids.length > 0 && (
+          <nav class="side-card" aria-label="In this section">
+            <h2>In this section</h2>
+            <ul>{kids.map((k) => <li><a href={k.path}>{k.title}</a></li>)}</ul>
+          </nav>
+        )}
+        {page?.sidebarHtml && (
+          <div class="side-card prose" set:html={page.sidebarHtml} />
+        )}
+      </aside>
+    )}
+  </div>
+</Base>
+
+<style>
+  .hero-date { margin: .6rem 0 0; color: #e6efe9; font-weight: 600; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 3rem; padding-block: 2.5rem; align-items: start; }
+  .layout:not(:has(.sidebar)) { grid-template-columns: minmax(0, 1fr); }
+  .content { min-width: 0; }
+  .sidebar { display: grid; gap: 1.25rem; }
+  .side-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.25rem; font-size: .95rem; }
+  .side-card h2 { font-size: 1rem; font-family: var(--font-sans); text-transform: uppercase; letter-spacing: .1em; color: var(--barn); margin: 0 0 .6rem; }
+  .side-card ul { list-style: none; padding: 0; margin: 0; }
+  .side-card li { padding: .3rem 0; border-top: 1px solid var(--line); }
+  .side-card li:first-child { border-top: 0; }
+  .side-card.prose :global(h2), .side-card.prose :global(h3) { font-size: 1.05rem; margin: 1rem 0 .4rem; }
+  .side-card.prose :global(ul) { padding-left: 0; list-style: none; }
+  .side-card.prose :global(li) { padding: .3rem 0; }
+  .empty { padding: 1.5rem; max-width: 60ch; }
+  .when { font-size: 1.05rem; }
+  .files ul { list-style: none; padding: 0; display: grid; gap: .6rem; max-width: 70ch; }
+  .file-card { display: flex; align-items: center; gap: 1rem; padding: .9rem 1.1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: var(--ink); box-shadow: var(--shadow); }
+  .file-card:hover { border-color: var(--pine-600); color: var(--ink); }
+  .file-type { font-size: .72rem; font-weight: 800; text-transform: uppercase; background: var(--barn); color: #fff; border-radius: 6px; padding: .3rem .5rem; min-width: 3.4rem; text-align: center; }
+  .file-name { flex: 1; font-weight: 600; word-break: break-word; }
+  .file-dl { color: var(--pine-700); font-weight: 700; white-space: nowrap; }
+  .record-side :global(h2) { margin-top: 0; }
+  .contact { margin-top: 1.5rem; padding: 1rem 1.25rem; background: var(--pine-100); border-radius: var(--radius); }
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+    .sidebar { position: static; max-height: none; }
+  }
+</style>

@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { pageByPath, recordById, recordHref, type RecordItem } from '../lib/data';
+
+const page = pageByPath.get('/news')!;
+// Keep the order the town posted them in.
+const items = page.records.map((id) => recordById.get(id)).filter(Boolean) as RecordItem[];
+const excerpt = (html: string) => {
+  const t = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return t.length > 220 ? t.slice(0, 220).replace(/\s+\S*$/, '') + '…' : t;
+};
+---
+<Base title="News & Announcements" description="News and announcements from the Town of New Gloucester, Maine.">
+  <PageHero title="News & Announcements" crumbs={[{ title: 'Home', href: '/' }, { title: 'Our Town', href: '/our-town' }]} />
+  <div class="wrap news">
+    <ul class="news-grid">
+      {items.map((n) => (
+        <li class="card">
+          <h2><a href={recordHref(n)}>{n.title}</a></h2>
+          {n.html && <p>{excerpt(n.html)}</p>}
+          {n.attachments.length > 0 && <p class="att">{n.attachments.length} attached file{n.attachments.length > 1 ? 's' : ''}</p>}
+          <a class="read" href={recordHref(n)} aria-hidden="true" tabindex="-1">Read more &rarr;</a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Base>
+<style>
+  .news { padding-block: 2rem; }
+  .news-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+  .news-grid li { padding: 1.3rem 1.4rem; display: flex; flex-direction: column; }
+  .news-grid h2 { font-size: 1.25rem; margin: 0 0 .5rem; }
+  .news-grid h2 a { color: var(--pine-900); text-decoration: none; }
+  .news-grid h2 a:hover { text-decoration: underline; color: var(--barn); }
+  .news-grid p { color: var(--muted); margin: 0 0 .8rem; font-size: .95rem; }
+  .att { font-size: .85rem !important; font-weight: 600; }
+  .read { margin-top: auto; font-weight: 650; }
+</style>
