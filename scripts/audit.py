@@ -100,6 +100,8 @@ WORD = re.compile(r"[a-z0-9][a-z0-9'’.-]*[a-z0-9]|[a-z0-9]", re.I)
 
 
 def words(text):
+    # file extensions on link labels ("Title_Page.pdf") are not content; the new site drops them
+    text = re.sub(r'\.(pdf|docx?|xlsx?|pptx?)\b', '', text, flags=re.I).replace('_', ' ')
     return collections.Counter(w.lower().strip(".'’-") for w in WORD.findall(text))
 
 

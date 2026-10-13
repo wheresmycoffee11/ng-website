@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import PageHero from '../components/PageHero.astro';
 import PageBody from '../components/PageBody.astro';
 import {
-  pages, records, pageByPath, breadcrumbs, childrenOf, formatDate, weekday,
+  pages, records, nav, pageByPath, breadcrumbs, childrenOf, formatDate, weekday, type NavItem,
   type Page, type RecordItem,
 } from '../lib/data';
 
@@ -34,6 +34,17 @@ if (page) {
   const parent = pageByPath.get(parentPath);
   crumbs = parent ? [...breadcrumbs(parent.path), { title: parent.title, href: parent.path }] : [{ title: 'Home', href: '/' }];
 }
+// Overview pages whose only content is a list of their sub-pages render as cards instead.
+const bodyText = page ? page.html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+const isIndex = !!page && kids.length > 0 && !page.html.includes('record-list') && !/<(img|iframe|table)/.test(page.html) &&
+  bodyText.length < 600 && (page.html.match(/<a /g) ?? []).length >= Math.min(2, kids.length);
+// Cards: the menu's children for this page first, then any other sub-pages.
+const findNav = (items: NavItem[], href: string): NavItem | undefined =>
+  items.reduce<NavItem | undefined>((hit, i) => hit ?? (i.href === href ? i : findNav(i.children, href)), undefined);
+const navKids = page ? (findNav(nav, page.path)?.children ?? []).map((c) => ({ path: c.href, title: c.title })) : [];
+const cards = [...navKids, ...kids.filter((k) => !navKids.some((n) => n.path === k.path))];
+const kidPaths = new Set(cards.map((k) => k.path));
+const extraLinks = isIndex && [...page!.html.matchAll(/href="([^"]+)"/g)].some((m) => !kidPaths.has(m[1]));
 const isEmpty = page && !page.html.replace(/<[^>]+>/g, '').trim() && !page.html.includes('record-list') && kids.length === 0;
 const kindLabel: Record<string, string> = { news: 'News & Announcements', event: 'Municipal Calendar', job: 'Employment Opportunity', item: '' };
 const fileIcon = (ext: string) => ({ pdf: 'PDF', doc: 'Word', docx: 'Word', xlsx: 'Excel', xls: 'Excel', pptx: 'PowerPoint', kmz: 'Google Earth', jpg: 'Image', png: 'Image' } as Record<string, string>)[ext] ?? ext.toUpperCase();
@@ -47,7 +58,17 @@ const fileIcon = (ext: string) => ({ pdf: 'PDF', doc: 'Word', docx: 'Word', xlsx
 
   <div class="wrap layout">
     <article class="content">
-      {page && <PageBody html={page.html} />}
+      {page && !isIndex && <PageBody html={page.html} />}
+      {isIndex && (
+        <ul class="cards">
+          {cards.map((k) => (
+            <li><a href={k.path} class="card section-card"><span>{k.title}</span><span aria-hidden="true">&rarr;</span></a></li>
+          ))}
+        </ul>
+      )}
+      {isIndex && extraLinks && (
+        <details class="legacy-list"><summary>Links as listed on the previous site</summary><div class="prose" set:html={page!.html} /></details>
+      )}
       {isEmpty && (
         <div class="empty card">
           <p><strong>Nothing is posted here right now.</strong></p>
@@ -80,9 +101,9 @@ const fileIcon = (ext: string) => ({ pdf: 'PDF', doc: 'Word', docx: 'Word', xlsx
       )}
     </article>
 
-    {(page?.sidebarHtml || kids.length > 0) && (
+    {(page?.sidebarHtml || (kids.length > 0 && !isIndex)) && (
       <aside class="sidebar">
-        {kids.length > 0 && (
+        {kids.length > 0 && !isIndex && (
           <nav class="side-card" aria-label="In this section">
             <h2>In this section</h2>
             <ul>{kids.map((k) => <li><a href={k.path}>{k.title}</a></li>)}</ul>
@@ -110,6 +131,11 @@ const fileIcon = (ext: string) => ({ pdf: 'PDF', doc: 'Word', docx: 'Word', xlsx
   .side-card.prose :global(h2), .side-card.prose :global(h3) { font-size: 1.05rem; margin: 1rem 0 .4rem; }
   .side-card.prose :global(ul) { padding-left: 0; list-style: none; }
   .side-card.prose :global(li) { padding: .3rem 0; }
+  .cards { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .9rem; }
+  .section-card { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.1rem 1.25rem; text-decoration: none; color: var(--pine-900); font-weight: 650; height: 100%; transition: border-color .15s, transform .15s; }
+  .section-card:hover { border-color: var(--pine-600); transform: translateY(-2px); color: var(--barn); }
+  .legacy-list { margin-top: 2rem; color: var(--muted); font-size: .92rem; }
+  .legacy-list summary { cursor: pointer; }
   .empty { padding: 1.5rem; max-width: 60ch; }
   .when { font-size: 1.05rem; }
   .files ul { list-style: none; padding: 0; display: grid; gap: .6rem; max-width: 70ch; }

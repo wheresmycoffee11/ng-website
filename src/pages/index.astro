@@ -68,8 +68,9 @@ const upcoming = records
     </div>
     <div class="hero-shade"></div>
     <div class="wrap hero-content">
-      <p class="hero-kicker">Town of New Gloucester · Maine</p>
-      <h1>Welcome home to New Gloucester</h1>
+      <p class="hero-kicker">Town of New Gloucester · Maine · Incorporated 1774</p>
+      <h1>New Gloucester</h1>
+      <p class="hero-tagline">Home of the Shaker Community</p>
       <form class="hero-search" action="/search" role="search">
         <label for="hero-q" class="visually-hidden">What are you looking for?</label>
         <input id="hero-q" name="q" type="search" placeholder="I'm looking for…" autocomplete="off" />
@@ -227,7 +228,8 @@ const upcoming = records
   .hero-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(20 42 30 / .15) 0%, rgb(20 42 30 / .35) 45%, rgb(20 42 30 / .88) 100%); }
   .hero-content { position: relative; padding-block: 3rem 3.5rem; width: 100%; }
   .hero-kicker { text-shadow: 0 1px 8px rgb(0 0 0 / .6); text-transform: uppercase; letter-spacing: .2em; font-weight: 700; font-size: .82rem; color: var(--harvest); margin: 0 0 .5rem; }
-  .hero h1 { color: #fff; font-size: clamp(2.3rem, 5.5vw, 4rem); max-width: 16ch; margin: 0 0 1.25rem; text-shadow: 0 2px 20px rgb(0 0 0 / .3); }
+  .hero h1 { color: #fff; font-size: clamp(2.6rem, 6.5vw, 4.6rem); max-width: 16ch; margin: 0; text-shadow: 0 2px 20px rgb(0 0 0 / .3); }
+  .hero-tagline { font-family: var(--font-serif); font-style: italic; font-size: clamp(1.25rem, 2.6vw, 1.8rem); color: #eaf3ec; margin: .1rem 0 1.4rem; text-shadow: 0 2px 14px rgb(0 0 0 / .45); }
   .hero-search { display: flex; gap: .5rem; max-width: 620px; background: #fff; padding: .4rem; border-radius: 999px; box-shadow: var(--shadow-lg); }
   .hero-search input { flex: 1; border: 0; font: inherit; font-size: 1.1rem; padding: .6rem 1rem; border-radius: 999px; min-width: 0; color: var(--ink); }
   .hero-search input:focus { outline: none; }
@@ -294,6 +296,7 @@ const upcoming = records
   }
   @media (max-width: 520px) {
     .service-grid { grid-template-columns: 1fr; }
-    .hero-search { flex-direction: column; border-radius: var(--radius); }
+    .hero-tagline { font-family: var(--font-serif); font-style: italic; font-size: clamp(1.25rem, 2.6vw, 1.8rem); color: #eaf3ec; margin: .1rem 0 1.4rem; text-shadow: 0 2px 14px rgb(0 0 0 / .45); }
+  .hero-search { flex-direction: column; border-radius: var(--radius); }
   }
 </style>

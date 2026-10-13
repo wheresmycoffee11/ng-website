@@ -12,7 +12,8 @@ redirect to a page/record/file. scripts/audit.py checks that claim against the b
 """
 import sys, os, re, json, hashlib, collections, urllib.parse as up
 import requests
-from bs4 import BeautifulSoup, Comment, NavigableString
+import html as htmllib
+from bs4 import BeautifulSoup, Comment, NavigableString, Tag
 
 CRAWL, REPO = sys.argv[1], sys.argv[2]
 HOST = 'https://www.newgloucester.com'
@@ -352,6 +353,208 @@ for u in canon_pages:
         if de and de in records and de not in listed_on:
             listed_on[de] = u
 
+
+# ---------------------------------------------------------------- tidy: give legacy markup real structure
+BLOCK = {'p', 'div', 'ul', 'ol', 'table', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'blockquote', 'iframe',
+         'section', 'article', 'aside', 'figure', 'dl', 'main', 'header', 'footer'}
+CONTAINERS = ['div', 'section', 'article', 'aside', 'main', 'header', 'footer', 'figure']
+BULLET = re.compile(r'^\s*[•➢❖·►▪■◦●○✓✔➤→\-–*]\s+')
+SENTENCE_END = re.compile(r'[.!?:)]["”’]?$')
+
+
+def _placeholder(t):
+    return isinstance(t, Tag) and t.name == 'div' and 'record-list' in (t.get('class') or [])
+
+
+def _meaningful(nodes):
+    return [n for n in nodes if not (isinstance(n, NavigableString) and not n.strip())]
+
+
+def _is_block(n):
+    return isinstance(n, Tag) and (n.name in BLOCK or _placeholder(n))
+
+
+def _split_on_br(p, frag, min_run):
+    """Split a <p> into several wherever `min_run` or more <br> sit in a row."""
+    segs, cur, run = [], [], []
+    for c in list(p.children):
+        if isinstance(c, Tag) and c.name == 'br':
+            run.append(c)
+            continue
+        if isinstance(c, NavigableString) and not c.strip() and run:
+            continue
+        if run:
+            if len(run) >= min_run:
+                segs.append(cur)
+                cur = []
+            else:
+                cur.extend(run)
+            run = []
+        cur.append(c)
+    segs.append(cur)
+    segs = [sg for sg in segs if _meaningful(sg)]
+    if len(segs) <= 1:
+        for b in run:
+            b.extract()
+        return [p]
+    out = []
+    for sg in segs:
+        np_ = frag.new_tag('p')
+        for c in sg:
+            np_.append(c.extract())
+        p.insert_before(np_)
+        out.append(np_)
+    p.decompose()
+    return out
+
+
+def _lines(p):
+    """Text of each <br>-separated line in a <p>."""
+    lines, cur = [], ''
+    for c in p.children:
+        if isinstance(c, Tag) and c.name == 'br':
+            lines.append(cur.strip())
+            cur = ''
+        else:
+            cur += c.get_text() if isinstance(c, Tag) else str(c)
+    lines.append(cur.strip())
+    return [l for l in lines if l]
+
+
+def tidy(root, frag):
+    # 1. flatten wrapper containers; a container holding only inline content becomes a paragraph
+    for t in root.find_all(CONTAINERS):
+        if t.parent is None or _placeholder(t):
+            continue
+        if t.find_parent(['table', 'li', 'blockquote']):
+            t.unwrap()
+        elif any(_is_block(c) for c in t.children):
+            t.unwrap()
+        else:
+            t.name = 'p'
+    # 2. wrap loose inline runs at the top level in paragraphs
+    run = []
+
+    def flush():
+        if _meaningful(run):
+            np_ = frag.new_tag('p')
+            run[0].insert_before(np_)
+            for c in run:
+                np_.append(c.extract())
+        run.clear()
+    for c in list(root.children):
+        if _is_block(c):
+            flush()
+        else:
+            run.append(c)
+    flush()
+    # 3. paragraphs: split on blank lines; split sentence-length lines and bullet lines
+    for p in list(root.find_all('p')):
+        if p.parent is None or p.find_parent(['table']):
+            continue
+        for q in _split_on_br(p, frag, 2):
+            lines = _lines(q)
+            bullets = sum(1 for l in lines if BULLET.match(l))
+            long_lines = sum(1 for l in lines if len(l) > 70 and SENTENCE_END.search(l))
+            if len(lines) > 1 and (bullets >= 2 or long_lines >= 2 or (long_lines and long_lines == len(lines) - 1 and len(lines) <= 3)):
+                _split_on_br(q, frag, 1)
+    # 4. a bold lead-in on its own line becomes a heading ("Charge:<br>Implement...")
+    def all_bold(el):
+        k = _meaningful(el.contents) if isinstance(el, Tag) and el.name == 'p' else []
+        return bool(k) and all(isinstance(c, Tag) and (c.name in ('strong', 'b') or c.name == 'br') for c in k)
+    bold_block = set()
+    run = []
+    for c in [c for c in root.children if isinstance(c, Tag)] + [None]:
+        if c is not None and all_bold(c):
+            run.append(c)
+            continue
+        if len(run) >= 3 or any(len(r.find_all(['strong', 'b'])) >= 3 for r in run):
+            bold_block.update(id(r) for r in run)
+        run = []
+    for p in list(root.find_all('p')):
+        if id(p) in bold_block or len(p.find_all(['strong', 'b'], recursive=False)) >= 3:
+            continue
+        if p.parent is None or p.find_parent(['table', 'li']):
+            continue
+        kids = _meaningful(p.contents)
+        if not kids or not isinstance(kids[0], Tag) or kids[0].name not in ('strong', 'b'):
+            continue
+        lead = kids[0]
+        text = lead.get_text(' ', strip=True)
+        if not text or len(text) > 80 or re.search(r'[.!?]$', text) or lead.find('a') or re.fullmatch(r'[\d\s()#+.-]+', text):
+            continue
+        rest = kids[1:]
+        if rest and not (isinstance(rest[0], Tag) and rest[0].name == 'br'):
+            continue
+        h = frag.new_tag('h3')
+        h.string = re.sub(r'\s+', ' ', text)
+        p.insert_before(h)
+        lead.decompose()
+        if rest:
+            rest[0].extract()
+        if not p.get_text(strip=True) and not p.find(['img', 'iframe']):
+            p.decompose()
+    # 4b. runs of short one-line paragraphs (hours, addresses, names) read as one block
+    def short_line(el):
+        if not (isinstance(el, Tag) and el.name == 'p') or el.find(['img', 'iframe', 'br']):
+            return False
+        t = el.get_text(' ', strip=True)
+        return 0 < len(t) <= 60 and not re.search(r'[.!?]$', t) and not BULLET.match(t)
+    run = []
+    for c in [c for c in root.children if isinstance(c, Tag)] + [None]:
+        if c is not None and short_line(c):
+            run.append(c)
+            continue
+        if len(run) >= 2:
+            first = run[0]
+            for r in run[1:]:
+                first.append(frag.new_tag('br'))
+                for k in list(r.contents):
+                    first.append(k.extract())
+                r.decompose()
+        run = []
+    # 5. typed bullets become real lists
+    for p in list(root.find_all('p')):
+        if p.parent is None or not BULLET.match(p.get_text()):
+            continue
+        prev = p.find_previous_sibling()
+        if prev is not None and prev.name == 'ul' and prev.get('data-typed') == '1' and prev.next_sibling is not None:
+            ul = prev
+        else:
+            ul = frag.new_tag('ul', attrs={'data-typed': '1'})
+            p.insert_before(ul)
+        first = next((d for d in p.descendants if isinstance(d, NavigableString) and d.strip()), None)
+        if first is not None:
+            first.replace_with(BULLET.sub('', str(first), count=1))
+        p.name = 'li'
+        ul.append(p.extract())
+    for ul in root.find_all('ul', attrs={'data-typed': '1'}):
+        del ul['data-typed']
+    # 6. stray breaks and rules
+    for p in root.find_all(['p', 'li', 'h2', 'h3', 'h4']):
+        kids = _meaningful(p.contents)
+        while kids and isinstance(kids[0], Tag) and kids[0].name == 'br':
+            kids.pop(0).extract()
+        while kids and isinstance(kids[-1], Tag) and kids[-1].name == 'br':
+            kids.pop().extract()
+    for c in list(root.children):
+        if isinstance(c, Tag) and c.name == 'br':
+            c.extract()
+    tops = [c for c in root.children if isinstance(c, Tag)]
+    prev = None
+    for c in tops:
+        if c.name == 'hr' and (prev is None or prev.name == 'hr'):
+            c.decompose()
+            continue
+        prev = c
+    tops = [c for c in root.children if isinstance(c, Tag)]
+    while tops and tops[-1].name == 'hr':
+        tops.pop().decompose()
+    for p in root.find_all('p'):
+        if not p.get_text(strip=True) and not p.find(['img', 'iframe', 'table']):
+            p.decompose()
+
+
 # ---------------------------------------------------------------- HTML cleaning
 KEEP_ATTR = {'a': {'href', 'title', 'target'}, 'img': {'src', 'alt', 'width', 'height'},
              'iframe': {'src', 'title', 'width', 'height', 'allow', 'allowfullscreen'},
@@ -432,8 +635,6 @@ def clean(node, base, demote=True):
             continue
         keep = KEEP_ATTR.get(t.name, set())
         t.attrs = {k: v for k, v in t.attrs.items() if k in keep}
-        if center and t.name in ('p', 'div', 'h2', 'h3', 'h4', 'td'):
-            t['class'] = 'center'
     if demote:
         for h in root.find_all('h1'):
             h.name = 'h2'
@@ -451,7 +652,12 @@ def clean(node, base, demote=True):
                 # invisible on the legacy site (link text was a space): show the file name
                 a.clear()
                 a.append(up.unquote(a['href'].rsplit('/', 1)[-1]))
-            if m:
+            label = a.get_text(' ', strip=True)
+            if m and re.fullmatch(r'[\w().,&-]+\.(pdf|docx?|xlsx?|pptx?)', label, re.I) and '_' in label:
+                # a raw file name used as link text: "Title_Page.pdf" -> "Title Page"
+                a.clear()
+                a.append(re.sub(r'\s+', ' ', re.sub(r'[_]+', ' ', label.rsplit('.', 1)[0])).strip())
+            if m and not re.search(r'\((pdf|word|doc|docx|excel|xlsx?)\)\s*$', a.get_text(' ', strip=True), re.I):
                 a['class'] = 'doc'
                 a['data-ext'] = m.group(1).upper()
         a.attrs.pop('target', None)
@@ -474,6 +680,7 @@ def clean(node, base, demote=True):
             keepers = ['img', 'iframe', 'hr', 'table'] + ([] if t.name == 'p' else ['br', 'div'])
             if not t.get_text(strip=True) and not t.find(keepers):
                 t.decompose()
+    tidy(root, frag)
     # collapse runs of <br>
     html = ''.join(str(x) for x in root.contents)
     html = re.sub(r'(<br/>\s*){3,}', '<br/><br/>', html)
@@ -539,6 +746,13 @@ for de, r in records.items():
 GENERIC = re.compile(r'^(agendas?|minutes|pb ?min.*|pb agendas.*)$', re.I)
 
 
+def drop_repeat_heading(html, *titles):
+    m = re.match(r'\s*<h[23][^>]*>(.*?)</h[23]>', html, re.S)
+    if m and re.sub(r'<[^>]+>|\s+', '', htmllib.unescape(m.group(1))).lower() in {re.sub(r'\s+', '', t or '').lower() for t in titles}:
+        return html[m.end():]
+    return html
+
+
 def page_record(u):
     s = soup(u)
     inner = s.select_one('main.content .insideMainContent') or s.select_one('main.content')
@@ -592,7 +806,7 @@ def page_record(u):
         'heading': heading,
         'legacy': sorted([x for x in canon_of if canon_of[x] == u], key=pref),
         'parent': (path_of.get(parent_of.get(u)) if parent_of.get(u) else None) if path_of.get(parent_of.get(u)) != path_of[u] else None,
-        'html': clean(inner, u),
+        'html': drop_repeat_heading(clean(inner, u), heading, title),
         'sidebarHtml': clean(side, u) if side and side.get_text(strip=True) else '',
         'records': listed,
         'special': u in SPECIAL,
@@ -630,6 +844,15 @@ for r in records.values():
     r['meeting'] = bool(lo and (lo.startswith(MEETING_ROOTS) or (page_by_path.get(lo) and re.match(r'pb ?min|pb agendas', page_by_path[lo]['title'], re.I))))
     if lo and '/agenda-minutes' not in lo and r['docType'] in ('Agenda', 'Minutes', 'Agenda Packet') and r['kind'] == 'item':
         r['meeting'] = True
+
+# Titles that are only a date ("June 20, 2006") take their type from the page that lists them
+for r in records.values():
+    pg = page_by_path.get(r['listedOn'] or '')
+    if r['docType'] == 'Document' and pg:
+        if re.search(r'min', pg['title'], re.I):
+            r['docType'] = 'Minutes'
+        elif re.search(r'agenda', pg['title'], re.I):
+            r['docType'] = 'Agenda'
 
 # Planning Board archive pages live under /planning; label their board explicitly
 for r in records.values():

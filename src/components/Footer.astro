@@ -6,6 +6,7 @@ const year = new Date().getFullYear();
 <footer class="site-footer">
   <div class="wrap footer-grid">
     <div class="footer-contact">
+      <img class="footer-seal" src="/media/brand/town-seal.png" alt="Town of New Gloucester seal, incorporated 1774" width="88" height="88" loading="lazy" />
       <p class="footer-name">Town of New Gloucester</p>
       <address>
         {site.address.street}<br />
@@ -41,6 +42,7 @@ const year = new Date().getFullYear();
   .site-footer a { color: #fff; }
   .site-footer a:hover { color: var(--harvest); }
   .footer-grid { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 2rem; padding-block: 3rem 2rem; }
+  .footer-seal { display: block; margin-bottom: .8rem; }
   .footer-name { font-family: var(--font-serif); font-size: 1.35rem; color: #fff; margin: 0 0 .5rem; }
   address { font-style: normal; margin-bottom: 1rem; }
   .footer-hours h2 { font-family: var(--font-sans); font-size: .82rem; text-transform: uppercase; letter-spacing: .12em; margin: 0 0 .5rem; color: var(--harvest); }

@@ -20,6 +20,8 @@ npm run preview
 - **Long document lists** on board pages get an inline filter and year picker.
 - **Mobile**: real mobile menu, no sideways scrolling, tap-friendly targets.
 - **Accessibility**: skip link, visible focus, pausable slideshow that respects reduced-motion, readable contrast, semantic headings.
+- **Neater pages**: the old site's content is restructured on import. Centered walls of text are left-aligned, run-on text is split into paragraphs, bold lead-ins become headings, typed bullets ("•", "➢") become real lists, filename link labels ("Title_Page.pdf") read as "Title Page", photo runs become a gallery, and section overview pages show their sub-pages as cards. The words themselves are unchanged (the audit checks this).
+- **Town seal** from the current site as the logo and favicon, and the old homepage's "Home of the Shaker Community" tagline (it was baked into an image, so the crawl couldn't see it).
 - **Old links keep working**: every old `index.asp?SEC=…&DE=…` address redirects to its new page (see below).
 
 ## How the content got here
